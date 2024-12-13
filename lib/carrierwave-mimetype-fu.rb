@@ -22,14 +22,16 @@ module CarrierWave
 
           begin
             # Collect information about the real content type
-            real_content_type = File.mime_type?(opened_file).split(';').first
-            valid_extensions  = Array(MIME::Types[real_content_type].try(:first).try(:extensions))
+            real_content_type   = File.mime_type?(opened_file).split(';').first
+            mime_type           = MIME::Types[real_content_type].try(:first)
+            valid_extensions    = Array(mime_type.try(:extensions))
+            preferred_extension = mime_type.try(:preferred_extension) || valid_extensions.first
 
             # Set proper content type, and update filename if current name doesn't match reach content type
             new_file              = CarrierWave::SanitizedFile.new(new_file)
             new_file.content_type = real_content_type
             base, ext             = new_file.send(:split_extension, new_file.original_filename)
-            ext                   = valid_extensions.first unless valid_extensions.include?(ext)
+            ext                   = preferred_extension unless valid_extensions.include?(ext)
 
             new_file.instance_variable_set '@original_filename', [base, ext].join('.')
           rescue StandardError => e
